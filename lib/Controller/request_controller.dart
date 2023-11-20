@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'dart:convert'; //json encode/decode
 import 'package:http/http.dart' as http;
 
 class RequestController{
@@ -9,29 +9,56 @@ class RequestController{
   final Map<String, String> _headers = {};
   dynamic _resultData;
 
-  RequestController({required this.path, this.server =
-    "http://"});
+  RequestController({required this.path, this.server ="http://10.0.2.16"});
+    //"http://192.168.0.118"});
   setBody(Map<String, dynamic> data){
     _body.clear();
     _body.addAll(data);
     _headers["Content-Type"] = "application/json; charset=UTF-8";
   }
 
+
   Future<void> post() async {
-    _res = await http.post(
+    try {
+      // Print JSON data for debugging
+      print("JSON data being sent: ${jsonEncode(_body)}");
+
+      _res = await http.post(
+        Uri.parse(server + path),
+        headers: _headers,
+        body: jsonEncode(_body),
+      );
+
+      _parseResult();
+    } catch (e) {
+      // Handle exceptions or rethrow if needed
+      print("Error in HTTP POST request: $e");
+      throw e;
+    }
+    // _res = await http.post(
+    //   Uri.parse(server + path),
+    //   headers: _headers,
+    //   body: jsonEncode(_body),
+    // );
+    // _parseResult();
+  }
+
+  Future<void> get() async{
+    _res = await http.get(
       Uri.parse(server + path),
       headers: _headers,
-      body: jsonEncode(_body),
     );
     _parseResult();
   }
 
   void _parseResult(){
+    // parse result into json structure if possible
     try{
       print("raw response:${_res?.body}" );
       _resultData = jsonDecode(_res?.body?? "");
     }
     catch(ex){
+      // otherwise the response body will be stored as is
       _resultData = _res?.body;
       print("exception in http result parsing ${ex}");
     }

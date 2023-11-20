@@ -1,14 +1,10 @@
+import 'package:daily_expenses/Controller/request_controller.dart';
 import 'package:flutter/material.dart';
+
+import '../Model/expense.dart';
 
 void main() {
   runApp(DailyExpensesApp(username: ""));
-}
-
-class Expense {
-  final String description;
-  final String amount;
-
-  Expense(this.description, this.amount);
 }
 
 class DailyExpensesApp extends StatelessWidget {
@@ -41,12 +37,14 @@ class EditExpenseScreen extends StatelessWidget {
 
   final TextEditingController descController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
+  final TextEditingController txtDateController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
 
-    descController.text = expense.description;
-    amountController.text = expense.amount;
+    descController.text = expense.desc;
+    amountController.text = expense.amount as String;
+    txtDateController.text = expense.dateTime;
 
     return Scaffold(
       appBar: AppBar(
@@ -55,7 +53,7 @@ class EditExpenseScreen extends StatelessWidget {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(2.0),
             child: TextField(
               controller: descController,
               decoration: InputDecoration(
@@ -64,7 +62,7 @@ class EditExpenseScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(2.0),
             child: TextField(
               controller: amountController,
               decoration: InputDecoration(
@@ -72,27 +70,44 @@ class EditExpenseScreen extends StatelessWidget {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: TextField(
+              keyboardType: TextInputType.datetime,
+              controller: txtDateController,
+              readOnly: true,
+              decoration: InputDecoration(
+                  labelText: 'Date'
+              ),
+            ),
+          ),
           ElevatedButton(
               onPressed: (){
+                // edited
                 onSave(
                     Expense(
-                        descController.text, amountController.text
+                        (double.parse(amountController.text)),
+                        descController.text,
+                        expense.dateTime,
                     )
                 );
 
-                var itemPassed = {
-                  "amount": amountController.text,
-                  "desc": descController.text,
-                };
+                // var itemPassed = {
+                //   "amount": amountController.text,
+                //   "desc": descController.text,
+                // };
 
-                Navigator.pop(context, itemPassed);
+                // Navigator.pop(context, itemPassed);
+                Navigator.pop(context);
               },
-              child: Text('Save me')
+              child: Text('Save')
           ),
         ],
       ),
+
     );
   }
+
 }
 
 class _ExpenseListState extends State<ExpenseList> {
@@ -101,62 +116,128 @@ class _ExpenseListState extends State<ExpenseList> {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController sumController = TextEditingController();
-
+  final TextEditingController txtDateController = TextEditingController();
   double sum = 0;
   final String username;
   _ExpenseListState(this.username);
 
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      final snackBar = SnackBar(
-        content: Text('Welcome $username'),
-      );
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-    });
-  }
-
-  void _addExpense() {
+  void _addExpense() async {
     String description = descriptionController.text.trim();
     String amount = amountController.text.trim();
-    sum += double.parse(amountController.text.trim());
+    // sum += double.parse(amountController.text.trim());
     if(description.isNotEmpty && amount.isNotEmpty){
-      setState(() {
-        expenses.add(Expense(description, amount));
-        descriptionController.clear();
-        amountController.clear();
-        sumController.text = sum.toStringAsFixed(2);
-      });
+      Expense exp =
+          Expense(double.parse(amount), description, txtDateController.text);
+
+      if(await exp.save()){
+        setState(() {
+          expenses.add(exp);
+          descriptionController.clear();
+          amountController.clear();
+          calculateTotal();
+        });
+      }
+      else{
+        _showMessage("Failed to save Expense data");
+      }
     }
   }
 
+  void calculateTotal(){
+    sum = 0;
+    for(Expense ex in expenses){
+      sum += ex.amount;
+    }
+    sumController.text = sum.toStringAsFixed(2);
+  }
+
   void _removeExpense(int index){
-    sum -= double.parse(expenses[index].amount);
+    sum -= expenses[index].amount;
     setState((){
       expenses.removeAt(index);
       sumController.text = sum.toStringAsFixed(2);
     });
   }
 
-  void _editExpense(int index) async {
-    await Navigator.push(
+  // function to display message at bottom of Scaffold
+  void _showMessage(String msg){
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+        ),
+      );
+    }
+  }
+
+  // Navigate to Edit Screen when long press on the itemlist
+  // edited
+  void _editExpense(int index) {
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditExpenseScreen(
           expense: expenses[index],
           onSave: (editedExpense) {
             setState((){
-              sum += double.parse(editedExpense.amount) -
-                  double.parse(expenses[index].amount);
+              sum += editedExpense.amount - expenses[index].amount;
               expenses[index] = editedExpense;
-              sumController.text = sum.toString();
+              sumController.text = sum.toStringAsFixed(2);
+              //txtDateController.text =
             });
           },
         ),
       ),
     );
+  }
+
+  // new function - Date and time picker on textfield
+  _selectDate() async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if(pickedDate != null && pickedTime != null){
+      setState((){
+        txtDateController.text =
+        "${pickedDate.year}-${pickedDate.month}-${pickedDate.day} "
+            "${pickedTime.hour}:${pickedTime.minute}:00";
+      });
+    }
+  }
+
+  // new
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp)
+    async {
+      _showMessage("Welcome ${widget.username}");
+
+      RequestController req = RequestController(
+          path: "/api/timezone/Asia/Kuala_Lumpur",
+          server: "http://worldtimeapi.org"
+      );
+      req.get().then((value) {
+        dynamic res = req.result();
+        txtDateController.text =
+            res["datetime"].toString().substring(0,19).replaceAll('T', ' ');
+      });
+
+      expenses.addAll(await Expense.loadAll());
+
+      setState(() {
+        calculateTotal();
+      });
+    });
   }
 
   @override
@@ -168,7 +249,7 @@ class _ExpenseListState extends State<ExpenseList> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(2.0),
             child: TextField(
               controller: descriptionController,
               decoration: InputDecoration(
@@ -177,7 +258,7 @@ class _ExpenseListState extends State<ExpenseList> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(2.0),
             child: TextField(
               controller: amountController,
               decoration: InputDecoration(
@@ -186,14 +267,26 @@ class _ExpenseListState extends State<ExpenseList> {
             ),
           ),
           Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: sumController,
-                readOnly: true,
-                decoration: InputDecoration(
-                    labelText: 'Total Spend (RM):'
-                ),
-              )
+            padding: const EdgeInsets.all(2.0),
+            child: TextField(
+              keyboardType: TextInputType.datetime,
+              controller: txtDateController,
+              readOnly: true,
+              onTap: _selectDate,
+              decoration: InputDecoration(
+                  labelText: 'Date'
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: TextField(
+              controller: sumController,
+              readOnly: true,
+              decoration: InputDecoration(
+                  labelText: 'Total Spend (RM):'
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: _addExpense,
@@ -213,7 +306,7 @@ class _ExpenseListState extends State<ExpenseList> {
         itemCount: expenses.length,
         itemBuilder: (context,index){
           return Dismissible(
-            key: Key(expenses[index].amount),
+            key: Key(expenses[index].amount as String),
             background: Container(
               color: Colors.red,
               child: Center(
@@ -232,13 +325,22 @@ class _ExpenseListState extends State<ExpenseList> {
             child: Card(
               margin: EdgeInsets.all(8.0),
               child: ListTile(
-                title: Text(expenses[index].description),
-                subtitle: Text('Amount: ${expenses[index].amount}'),
+                title: Text(expenses[index].desc),
+                subtitle: Row(
+                  children: [
+                    // edited
+                    Text('Amount: ${expenses[index].amount}'),
+                    const Spacer(),
+                    Text('Date: ${expenses[index].dateTime}')
+                  ],
+                ),
                 trailing: IconButton(
                   icon: Icon(Icons.delete),
                   onPressed: () => _removeExpense(index),
                 ),
-                onLongPress: () => _editExpense(index),
+                onLongPress: () {
+                  _editExpense(index);
+                },
               ),
             ),
           );
@@ -247,3 +349,11 @@ class _ExpenseListState extends State<ExpenseList> {
     );
   }
 }
+
+
+// class Expense {
+//   final String description;
+//   final String amount;
+//
+//   Expense(this.description, this.amount);
+// }
