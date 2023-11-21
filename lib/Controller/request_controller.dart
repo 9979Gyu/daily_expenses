@@ -9,38 +9,25 @@ class RequestController{
   final Map<String, String> _headers = {};
   dynamic _resultData;
 
-  RequestController({required this.path, this.server ="http://10.0.2.16"});
-    //"http://192.168.0.118"});
+  // http://10.0.2.16 - vm
+  // 10.0.0.2 - vm devices
+  // 10.131.76.215 - utem
+  RequestController({required this.path,
+    this.server ="http://192.168.0.118"});
+    //"http://192.168.0.118"}); - my
   setBody(Map<String, dynamic> data){
     _body.clear();
     _body.addAll(data);
     _headers["Content-Type"] = "application/json; charset=UTF-8";
   }
 
-
   Future<void> post() async {
-    try {
-      // Print JSON data for debugging
-      print("JSON data being sent: ${jsonEncode(_body)}");
-
-      _res = await http.post(
-        Uri.parse(server + path),
-        headers: _headers,
-        body: jsonEncode(_body),
-      );
-
-      _parseResult();
-    } catch (e) {
-      // Handle exceptions or rethrow if needed
-      print("Error in HTTP POST request: $e");
-      throw e;
-    }
-    // _res = await http.post(
-    //   Uri.parse(server + path),
-    //   headers: _headers,
-    //   body: jsonEncode(_body),
-    // );
-    // _parseResult();
+    _res = await http.post(
+      Uri.parse(server + path),
+      headers: _headers,
+      body: jsonEncode(_body),
+    );
+    _parseResult();
   }
 
   Future<void> get() async{

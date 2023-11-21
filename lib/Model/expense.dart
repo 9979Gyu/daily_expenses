@@ -1,6 +1,7 @@
 import '../Controller/request_controller.dart';
 
 class Expense {
+  int? id;
   String desc;
   double amount;
   String dateTime;
@@ -22,6 +23,7 @@ class Expense {
     if(req.status() == 200){
       return true;
     }
+
     return false;
   }
 
@@ -33,6 +35,9 @@ class Expense {
       for(var item in req.result()){
         result.add(Expense.fromJson(item));
       }
+    }
+    else{
+      print("is not connected");
     }
     return result;
   }
