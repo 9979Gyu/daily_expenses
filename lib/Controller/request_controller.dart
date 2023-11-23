@@ -9,12 +9,13 @@ class RequestController{
   final Map<String, String> _headers = {};
   dynamic _resultData;
 
-  // http://10.0.2.16 - vm
+  // 10.0.2.16 - vm
   // 10.0.0.2 - vm devices
   // 10.131.76.215 - utem
+  // 192.168.0.118 - my
   RequestController({required this.path,
     this.server ="http://192.168.0.118"});
-    //"http://192.168.0.118"}); - my
+
   setBody(Map<String, dynamic> data){
     _body.clear();
     _body.addAll(data);
@@ -34,6 +35,24 @@ class RequestController{
     _res = await http.get(
       Uri.parse(server + path),
       headers: _headers,
+    );
+    _parseResult();
+  }
+
+  Future<void> put() async{
+    _res = await http.put(
+      Uri.parse(server + path),
+      headers: _headers,
+      body: jsonEncode(_body),
+    );
+    _parseResult();
+  }
+
+  Future<void> delete() async{
+    _res = await http.delete(
+      Uri.parse(server + path),
+      headers: _headers,
+      body: jsonEncode(_body),
     );
     _parseResult();
   }

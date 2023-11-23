@@ -3,10 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../Model/expense.dart';
 
-// void main() {
-//   runApp(DailyExpensesApp(username: ""));
-// }
-
 class DailyExpensesApp extends StatelessWidget {
 
   final String username;
@@ -73,7 +69,7 @@ class _ExpenseListState extends State<ExpenseList> {
     // sum += double.parse(amountController.text.trim());
     if(description.isNotEmpty && amount.isNotEmpty){
       Expense exp =
-      Expense(double.parse(amount), description,
+      Expense(null, double.parse(amount), description,
           txtDateController.text);
 
       if(await exp.save()){
@@ -98,12 +94,24 @@ class _ExpenseListState extends State<ExpenseList> {
     sumController.text = sum.toStringAsFixed(2);
   }
 
-  void _removeExpense(int index){
+  void _removeExpense(int index) async {
     sum -= expenses[index].amount;
-    setState((){
-      expenses.removeAt(index);
-      sumController.text = sum.toStringAsFixed(2);
-    });
+
+    Expense exp = Expense(expenses[index].id, 0, "", "");
+
+    print(exp.id);
+
+    if(await exp.delete()){
+      setState((){
+        expenses.removeAt(index);
+        sumController.text = sum.toStringAsFixed(2);
+      });
+
+      _showMessage("Data successfully deleted");
+    }
+    else{
+      _showMessage("Failed to delete data");
+    }
   }
 
   // function to display message at bottom of Scaffold
@@ -125,13 +133,19 @@ class _ExpenseListState extends State<ExpenseList> {
       MaterialPageRoute(
         builder: (context) => EditExpenseScreen(
           expense: expenses[index],
-          onSave: (editedExpense) {
-            setState((){
-              sum += editedExpense.amount - expenses[index].amount;
-              expenses[index] = editedExpense;
-              sumController.text = sum.toStringAsFixed(2);
-              //txtDateController.text =
-            });
+          onSave: (editedExpense) async {
+            if (await editedExpense.edit()) {
+              setState(() {
+                sum += editedExpense.amount - expenses[index].amount;
+                expenses[index] = editedExpense;
+                sumController.text = sum.toStringAsFixed(2);
+              });
+              _showMessage("Expense updated successfully");
+
+            }
+            else {
+              _showMessage("Failed to update Expense data");
+            }
           },
         ),
       ),
@@ -165,7 +179,7 @@ class _ExpenseListState extends State<ExpenseList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Daily Expenses'),
+        title: const Text('Daily Expenses'),
       ),
       body: Column(
         children: [
@@ -173,7 +187,7 @@ class _ExpenseListState extends State<ExpenseList> {
             padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: descriptionController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                   labelText: 'Description'
               ),
             ),
@@ -182,7 +196,7 @@ class _ExpenseListState extends State<ExpenseList> {
             padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: amountController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Amount (RM)',
               ),
             ),
@@ -194,7 +208,7 @@ class _ExpenseListState extends State<ExpenseList> {
               controller: txtDateController,
               readOnly: true,
               onTap: _selectDate,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                   labelText: 'Date'
               ),
             ),
@@ -204,7 +218,7 @@ class _ExpenseListState extends State<ExpenseList> {
             child: TextField(
               controller: sumController,
               readOnly: true,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                   labelText: 'Total Spend (RM):'
               ),
             ),
@@ -251,11 +265,11 @@ class _ExpenseListState extends State<ExpenseList> {
               margin: const EdgeInsets.all(8.0),
               child: ListTile(
                 title: Text(expenses[index].desc),
-                subtitle: Row(
+                subtitle: Column(
                   children: [
                     // edited
                     Text('Amount: ${expenses[index].amount}'),
-                    const Spacer(),
+                    // const Spacer(),
                     Text('Date: ${expenses[index].dateTime}')
                   ],
                 ),
@@ -275,19 +289,36 @@ class _ExpenseListState extends State<ExpenseList> {
   }
 }
 
-class EditExpenseScreen extends StatelessWidget {
+class EditExpenseScreen extends StatefulWidget {
+  // const EditExpenseScreen({super.key});
+
   final Expense expense;
   final Function(Expense) onSave;
 
   EditExpenseScreen({required this.expense, required this.onSave});
 
+  @override
+  State<EditExpenseScreen> createState() => _EditExpenseScreenState();
+}
+
+class _EditExpenseScreenState extends State<EditExpenseScreen> {
+
   final TextEditingController descController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController txtDateController = TextEditingController();
+  int? id;
+
+  @override
+  void initState() {
+    super.initState();
+    id = widget.expense.id;
+    descController.text = widget.expense.desc;
+    amountController.text = widget.expense.amount.toString();
+    txtDateController.text = widget.expense.dateTime;
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Expense'),
@@ -298,7 +329,7 @@ class EditExpenseScreen extends StatelessWidget {
             padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: descController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Description',
               ),
             ),
@@ -307,7 +338,7 @@ class EditExpenseScreen extends StatelessWidget {
             padding: const EdgeInsets.all(5.0),
             child: TextField(
               controller: amountController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Amount (RM)',
               ),
             ),
@@ -319,38 +350,31 @@ class EditExpenseScreen extends StatelessWidget {
               controller: txtDateController,
               readOnly: true,
               onTap: _selectDate,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                   labelText: 'Date'
               ),
             ),
           ),
           ElevatedButton(
-              onPressed: (){
-                // edited
-                onSave(
-                    Expense(
-                        (double.parse(amountController.text)),
-                        descController.text,
-                        expense.dateTime,
-                    )
+              onPressed: () {
+                widget.onSave(
+                  Expense(id,
+                    double.parse(amountController.text),
+                    descController.text,
+                    txtDateController.text,
+                  ),
                 );
 
-                // var itemPassed = {
-                //   "amount": amountController.text,
-                //   "desc": descController.text,
-                // };
-
-                // Navigator.pop(context, itemPassed);
                 Navigator.pop(context);
               },
-              child: Text('Save')
+
+              child: const Text('Save')
           ),
         ],
       ),
 
     );
   }
-
   _selectDate() async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -372,5 +396,4 @@ class EditExpenseScreen extends StatelessWidget {
       });
     }
   }
-
 }
