@@ -8,8 +8,7 @@ class SQLiteDB{
 
   // private constructor
   SQLiteDB._();
-  static final SQLiteDB _instance =
-      SQLiteDB._();
+  static final SQLiteDB _instance = SQLiteDB._();
 
   factory SQLiteDB(){
     return _instance;
@@ -17,17 +16,18 @@ class SQLiteDB{
 
   Future<Database> get database async {
     if(_db != null){
+      // return existing value if assigned
       return _db!;
     }
-    String path = join(
-        await getDatabasesPath(), _dbName,);
+    String path = join(await getDatabasesPath(), _dbName,);
     _db = await openDatabase(
-        path, version: 1,
-        onCreate: (createdDb, version) async {
-          for(String tableSql in SQLiteDB.tableSQLStrings){
-            await createdDb.execute(tableSql);
-          }
-        },
+      path,
+      version: 1,
+      onCreate: (createdDb, version) async {
+        for(String tableSql in SQLiteDB.tableSQLStrings){
+          await createdDb.execute(tableSql);
+        }
+      }
     );
     return _db!;
   }
@@ -36,37 +36,47 @@ class SQLiteDB{
       [
         '''
           CREATE TABLE IF NOT EXISTS expense (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          amount DOUBLE,
-          desc TEXT,
-          dateTime DATETIME)
-          ''',
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            amount VARCHAR(65),
+            desc TEXT,
+            dateTime DATETIME)
+            ''',
       ];
 
-  Future<List<Map<String, dynamic>>> queryAll(
-      String tableName) async{
+  Future<int> insert(String tableName, Map<String, dynamic> row) async {
+    try{
+      Database db = await _instance.database;
+      return await db.insert(tableName, row);
+    }
+    catch(e){
+      print("Error inserting data: $e");
+      throw e;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> queryAll(String tableName) async {
     Database db = await _instance.database;
     return await db.query(tableName);
   }
 
-  Future<int> insert(
-      String tableName, Map<String, dynamic> row) async{
+  Future<int> update(String tableName, String idColumn,
+      Map<String, dynamic> row) async {
     Database db = await _instance.database;
-    return await db.insert(tableName, row);
-  }
-
-  Future<int> update(String tableName,
-      String idColumn, Map<String, dynamic> row) async{
-    Database db = await _instance.database;
+    print("this is id : $row['id']");
     dynamic id = row[idColumn];
-    return await db.update(tableName, row,
-        where: '$idColumn = ?', whereArgs: [id]);
+    int result = await db.update(
+        tableName, row, where: '$idColumn = ?', whereArgs: [id]
+    );
+    return result;
   }
 
   Future<int> delete(String tableName, String idColumn,
       dynamic idValue) async {
     Database db = await _instance.database;
-    return await db.delete(tableName,
-        where: '$idColumn = ?', whereArgs: [idValue]);
+    print("this is id : $idValue");
+    return await db.delete(
+        tableName, where: '$idColumn = ?', whereArgs: [idValue]
+    );
   }
+
 }

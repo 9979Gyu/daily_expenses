@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dailyexpenses.dart';
 
 void main() {
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   TextEditingController usernameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+  TextEditingController ipController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,15 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: TextField(
+            //     controller: ipController,
+            //     decoration: const InputDecoration(
+            //       labelText: 'IP Address',
+            //     ),
+            //   ),
+            // ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
@@ -48,11 +59,17 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             ElevatedButton(
-                onPressed: (){
+                onPressed: () async {
                   String username = usernameController.text;
                   String password = passwordController.text;
+                  String ip = ipController.text;
 
-                  if(username == "1" && password == "1") {
+                  if(username == "1" && password == "1" ) {
+                    // final prefs = await SharedPreferences.getInstance();
+                    // await prefs.setString("username", username);
+                    // await prefs.setString("ip", ip);
+                    // await prefs.setBool("isLogin", true);
+
                     // Navigate to daily expense screen
                     Navigator.push(
                       context,

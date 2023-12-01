@@ -1,5 +1,6 @@
 import 'dart:convert'; //json encode/decode
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RequestController{
   String path;
@@ -12,9 +13,7 @@ class RequestController{
   // 10.0.2.16 - vm
   // 10.0.0.2 - vm devices
   // 10.131.76.215 - utem
-  // 192.168.0.118 - my
-  RequestController({required this.path,
-    this.server ="http://192.168.0.118"});
+  RequestController({required this.path, this.server ="http://192.168.0.128"});
 
   setBody(Map<String, dynamic> data){
     _body.clear();
@@ -28,6 +27,7 @@ class RequestController{
       headers: _headers,
       body: jsonEncode(_body),
     );
+    print("response : ${_res}");
     _parseResult();
   }
 

@@ -1,12 +1,13 @@
+import 'dart:math';
+
 import 'package:daily_expenses/Controller/request_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../Model/expense.dart';
 
 class DailyExpensesApp extends StatelessWidget {
 
   final String username;
-  DailyExpensesApp({required this.username});
+  const DailyExpensesApp({super.key, required this.username});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class DailyExpensesApp extends StatelessWidget {
 
 class ExpenseList extends StatefulWidget {
   final String username;
-  ExpenseList(this.username);
+  const ExpenseList(this.username, {super.key});
 
   @override
   _ExpenseListState createState() => _ExpenseListState(username);
@@ -55,6 +56,7 @@ class _ExpenseListState extends State<ExpenseList> {
             substring(0,19).replaceAll('T', ' ');
       });
 
+      expenses.clear();
       expenses.addAll(await Expense.loadAll());
 
       setState(() {
@@ -66,15 +68,15 @@ class _ExpenseListState extends State<ExpenseList> {
   void _addExpense() async {
     String description = descriptionController.text.trim();
     String amount = amountController.text.trim();
-    // sum += double.parse(amountController.text.trim());
+
     if(description.isNotEmpty && amount.isNotEmpty){
-      Expense exp =
-      Expense(null, double.parse(amount), description,
-          txtDateController.text);
+      Expense exp = Expense(null, double.parse(amount),
+          description, txtDateController.text);
 
       if(await exp.save()){
+        expenses.clear();
+        expenses.addAll(await Expense.loadAll());
         setState(() {
-          expenses.add(exp);
           descriptionController.clear();
           amountController.clear();
           calculateTotal();
@@ -98,8 +100,6 @@ class _ExpenseListState extends State<ExpenseList> {
     sum -= expenses[index].amount;
 
     Expense exp = Expense(expenses[index].id, 0, "", "");
-
-    print(exp.id);
 
     if(await exp.delete()){
       setState((){
@@ -158,7 +158,7 @@ class _ExpenseListState extends State<ExpenseList> {
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now(),
     );
 
     final TimeOfDay? pickedTime = await showTimePicker(
@@ -181,29 +181,23 @@ class _ExpenseListState extends State<ExpenseList> {
       appBar: AppBar(
         title: const Text('Daily Expenses'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            TextField(
               controller: descriptionController,
               decoration: const InputDecoration(
                   labelText: 'Description'
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+            TextField(
               controller: amountController,
               decoration: const InputDecoration(
                 labelText: 'Amount (RM)',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+            TextField(
               keyboardType: TextInputType.datetime,
               controller: txtDateController,
               readOnly: true,
@@ -212,79 +206,74 @@ class _ExpenseListState extends State<ExpenseList> {
                   labelText: 'Date'
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+            TextField(
               controller: sumController,
               readOnly: true,
               decoration: const InputDecoration(
                   labelText: 'Total Spend (RM):'
               ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: _addExpense,
-            child: const Text('Add Expense'),
-          ),
-          Container(
-            child: _buildListView(),
-          ),
-        ],
+            ElevatedButton(
+              onPressed: _addExpense,
+              child: const Text('Add Expense'),
+            ),
+            Expanded(
+                child: _buildListView()
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildListView(){
-    return Expanded(
-      child: ListView.builder(
-        itemCount: expenses.length,
-        itemBuilder: (context,index){
-          return Dismissible(
-            key: Key(expenses[index].amount.toString()),
-            background: Container(
-              color: Colors.red,
-              child: const Center(
-                child: Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.white),
-                ),
+    return ListView.builder(
+      itemCount: expenses.length,
+      itemBuilder: (context,index){
+        return Dismissible(
+          key: Key(expenses[index].amount.toString()),
+          background: Container(
+            color: Colors.red,
+            child: const Center(
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Colors.white),
               ),
             ),
-            onDismissed: (direction){
-              _removeExpense(index);
-              // show message of item deleted == alert in javascript
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(
-                    const SnackBar(
-                      content: Text('Item dismissed')
-                    )
-                  );
-            },
-            child: Card(
-              margin: const EdgeInsets.all(8.0),
-              child: ListTile(
-                title: Text(expenses[index].desc),
-                subtitle: Column(
-                  children: [
-                    // edited
-                    Text('Amount: ${expenses[index].amount}'),
-                    // const Spacer(),
-                    Text('Date: ${expenses[index].dateTime}')
-                  ],
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _removeExpense(index),
-                ),
-                onLongPress: () {
-                  _editExpense(index);
-                },
+          ),
+          onDismissed: (direction){
+            _removeExpense(index);
+            // show message of item deleted == alert in javascript
+            ScaffoldMessenger.of(context)
+                .showSnackBar(
+                const SnackBar(
+                    content: Text('Item dismissed')
+                )
+            );
+          },
+          child: Card(
+            margin: const EdgeInsets.all(8.0),
+            child: ListTile(
+              title: Text("${expenses[index].id} + ${expenses[index].desc}"),
+              subtitle: Column(
+                children: [
+                  // edited
+                  Text('Amount: ${expenses[index].amount}'),
+                  // const Spacer(),
+                  Text('Date: ${expenses[index].dateTime}')
+                ],
               ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => _removeExpense(index),
+              ),
+              onLongPress: () {
+                _editExpense(index);
+              },
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -306,12 +295,14 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
   final TextEditingController descController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   final TextEditingController txtDateController = TextEditingController();
-  int? id;
+  int id = 0;
+
+  _EditExpenseScreenState();
 
   @override
   void initState() {
     super.initState();
-    id = widget.expense.id;
+    id = widget.expense.id!;
     descController.text = widget.expense.desc;
     amountController.text = widget.expense.amount.toString();
     txtDateController.text = widget.expense.dateTime;
@@ -323,29 +314,24 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       appBar: AppBar(
         title: const Text('Edit Expense'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Text("Id is ${id}"),
+            TextField(
               controller: descController,
               decoration: const InputDecoration(
                 labelText: 'Description',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+            TextField(
               controller: amountController,
               decoration: const InputDecoration(
                 labelText: 'Amount (RM)',
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(5.0),
-            child: TextField(
+            TextField(
               keyboardType: TextInputType.datetime,
               controller: txtDateController,
               readOnly: true,
@@ -354,25 +340,23 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
                   labelText: 'Date'
               ),
             ),
-          ),
-          ElevatedButton(
-              onPressed: () {
-                widget.onSave(
-                  Expense(id,
-                    double.parse(amountController.text),
-                    descController.text,
-                    txtDateController.text,
-                  ),
-                );
-
-                Navigator.pop(context);
-              },
-
-              child: const Text('Save')
-          ),
-        ],
+            ElevatedButton(
+                onPressed: () {
+                  widget.onSave(
+                    Expense(
+                      id,
+                      double.parse(amountController.text),
+                      descController.text,
+                      txtDateController.text,
+                    ),
+                  );
+                  Navigator.pop(context);
+                },
+                child: const Text('Save')
+            ),
+          ],
+        ),
       ),
-
     );
   }
   _selectDate() async {
@@ -380,7 +364,7 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now(),
     );
 
     final TimeOfDay? pickedTime = await showTimePicker(

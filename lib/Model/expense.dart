@@ -1,5 +1,5 @@
-import '../Controller/sqlite_db.dart';
 import '../Controller/request_controller.dart';
+import '../Controller/sqlite_db.dart';
 
 class Expense {
   static const String SQLiteTable = "expense";
@@ -8,8 +8,8 @@ class Expense {
   double amount;
   String dateTime;
   String path = "/api/expenses.php";
+
   Expense(this.id, this.amount, this.desc, this.dateTime);
-  // Expense.getDataById(this.id, this.amount, this.desc, this.dateTime);
 
   Expense.fromJson(Map<String, dynamic> json)
     : desc = json['desc'] as String,
@@ -24,23 +24,50 @@ class Expense {
   Future<bool> save() async {
     // Save to local SQLite
     await SQLiteDB().insert(SQLiteTable, toJson());
+
     // API operation
     RequestController req = RequestController(path: path);
     req.setBody(toJson());
     await req.post();
+
     if(req.status() == 200){
       return true;
     }
     else{
       if(await SQLiteDB().insert(SQLiteTable, toJson()) != 0) {
         return true;
-      }else{
+      }
+      else{
         return false;
       }
     }
   }
 
+  static Future<List<Expense>> loadAll() async {
+    List<Expense> expenseList = [];
+
+    RequestController req = RequestController(path: "/api/expenses.php");
+    await req.get();
+    if(req.status() == 200 && req.result() != null){
+      for (var item in req.result()) {
+        expenseList.add(Expense.fromJson(item));
+      }
+    }
+    else {
+      List<Map<String, dynamic>> rawResult =
+        await SQLiteDB().queryAll(SQLiteTable);
+
+      for (var item in rawResult) {
+        expenseList.add(Expense.fromJson(item));
+      }
+    }
+    return expenseList;
+  }
+
   Future<bool> edit() async {
+    // Update local
+    int re = await SQLiteDB().update(SQLiteTable, 'id', toJson());
+
     RequestController req = RequestController(path: path);
     req.setBody(toJson());
     await req.put();
@@ -48,13 +75,19 @@ class Expense {
       return true;
     }
     else{
-      print("HTTP return: ${req.status()}");
-      print("HTTP return: ${req.result()}");
+      if(re != 0) {
+        return true;
+      }
+      else{
+        return false;
+      }
     }
-    return false;
+    // return false;
   }
 
   Future<bool> delete() async {
+    await SQLiteDB().delete(SQLiteTable, 'id', id);
+
     RequestController req = RequestController(path: path);
     req.setBody(toJson());
     await req.delete();
@@ -64,27 +97,12 @@ class Expense {
     else{
       print("HTTP return: ${req.status()}");
       print("HTTP return: ${req.result()}");
-    }
-    return false;
-  }
-
-  static Future<List<Expense>> loadAll() async{
-    List<Expense> result = [];
-    RequestController req = RequestController(path: "/api/expenses.php");
-    await req.get();
-    if(req.status() == 200 && req.result() != null){
-      for(var item in req.result()){
-        result.add(Expense.fromJson(item));
+      if(await SQLiteDB().delete(SQLiteTable, 'id', id) != 0) {
+        return true;
+      }
+      else{
+        return false;
       }
     }
-    else{
-      List<Map<String, dynamic>> result =
-        await SQLiteDB().queryAll(SQLiteTable);
-      List<Expense> expenses = [];
-      for(var item in result) {
-        result.add(Expense.fromJson(item) as Map<String, dynamic>);
-      }
-    }
-    return result;
   }
 }
