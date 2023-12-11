@@ -254,7 +254,7 @@ class _ExpenseListState extends State<ExpenseList> {
           child: Card(
             margin: const EdgeInsets.all(8.0),
             child: ListTile(
-              title: Text(expenses[index].desc),
+              title: Text("${expenses[index].desc}"),
               subtitle: Column(
                 children: [
                   // edited
