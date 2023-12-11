@@ -46,7 +46,8 @@ class Expense {
   static Future<List<Expense>> loadAll() async {
     List<Expense> expenseList = [];
 
-    RequestController req = RequestController(path: "/api/expenses.php");
+    RequestController req =
+      RequestController(path: "/api/expenses.php");
     await req.get();
     if(req.status() == 200 && req.result() != null){
       for (var item in req.result()) {

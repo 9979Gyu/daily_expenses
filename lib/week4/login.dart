@@ -21,6 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController ipController = TextEditingController();
 
+  _saveValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString('ipAddress', ipController.text.trim());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,15 +36,15 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: TextField(
-            //     controller: ipController,
-            //     decoration: const InputDecoration(
-            //       labelText: 'IP Address',
-            //     ),
-            //   ),
-            // ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: ipController,
+                decoration: const InputDecoration(
+                  labelText: 'IP Address',
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
@@ -62,13 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   String username = usernameController.text;
                   String password = passwordController.text;
-                  String ip = ipController.text;
 
                   if(username == "1" && password == "1" ) {
-                    // final prefs = await SharedPreferences.getInstance();
-                    // await prefs.setString("username", username);
-                    // await prefs.setString("ip", ip);
-                    // await prefs.setBool("isLogin", true);
+                    // call function to set data in shared pref
+                    try {
+                      await _saveValue();
+                    } catch (e) {
+                      print("Error saving IP address: $e");
+                    }
 
                     // Navigate to daily expense screen
                     Navigator.push(

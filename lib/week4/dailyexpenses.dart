@@ -254,7 +254,7 @@ class _ExpenseListState extends State<ExpenseList> {
           child: Card(
             margin: const EdgeInsets.all(8.0),
             child: ListTile(
-              title: Text("${expenses[index].id} + ${expenses[index].desc}"),
+              title: Text(expenses[index].desc),
               subtitle: Column(
                 children: [
                   // edited
@@ -318,7 +318,6 @@ class _EditExpenseScreenState extends State<EditExpenseScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            Text("Id is ${id}"),
             TextField(
               controller: descController,
               decoration: const InputDecoration(

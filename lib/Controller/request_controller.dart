@@ -10,10 +10,16 @@ class RequestController{
   final Map<String, String> _headers = {};
   dynamic _resultData;
 
+  _loadStoredIPAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String ipAddress = prefs.getString('ipAddress') ?? "no value accepted";
+    return "http://$ipAddress";
+  }
+
   // 10.0.2.16 - vm
   // 10.0.0.2 - vm devices
   // 10.131.76.215 - utem
-  RequestController({required this.path, this.server ="http://192.168.0.128"});
+  RequestController({required this.path, this.server = ""});
 
   setBody(Map<String, dynamic> data){
     _body.clear();
@@ -22,6 +28,8 @@ class RequestController{
   }
 
   Future<void> post() async {
+    server = await _loadStoredIPAddress();
+    print("This is $server");
     _res = await http.post(
       Uri.parse(server + path),
       headers: _headers,
@@ -32,6 +40,10 @@ class RequestController{
   }
 
   Future<void> get() async{
+    if(server == ""){
+      server = await _loadStoredIPAddress();
+    }
+    print("This is $server");
     _res = await http.get(
       Uri.parse(server + path),
       headers: _headers,
@@ -40,6 +52,8 @@ class RequestController{
   }
 
   Future<void> put() async{
+    server = await _loadStoredIPAddress();
+    print("This is $server");
     _res = await http.put(
       Uri.parse(server + path),
       headers: _headers,
@@ -49,6 +63,8 @@ class RequestController{
   }
 
   Future<void> delete() async{
+    server = await _loadStoredIPAddress();
+    print("This is $server");
     _res = await http.delete(
       Uri.parse(server + path),
       headers: _headers,
