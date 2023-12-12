@@ -1,5 +1,6 @@
 import '../Controller/request_controller.dart';
 import '../Controller/sqlite_db.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Expense {
   static const String SQLiteTable = "expense";
@@ -8,6 +9,13 @@ class Expense {
   double amount;
   String dateTime;
   String path = "/api/expenses.php";
+  static String ipAddress = "http://192.168.124.174";
+
+  _loadStoredIPAddress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String result = prefs.getString('ipAddress') ?? "no value accepted";
+    ipAddress = "http://$result";
+  }
 
   Expense(this.id, this.amount, this.desc, this.dateTime);
 
@@ -26,7 +34,11 @@ class Expense {
     await SQLiteDB().insert(SQLiteTable, toJson());
 
     // API operation
-    RequestController req = RequestController(path: path);
+    _loadStoredIPAddress();
+    RequestController req = RequestController(
+        path: path,
+        server: ipAddress,
+    );
     req.setBody(toJson());
     await req.post();
 
@@ -46,9 +58,16 @@ class Expense {
   static Future<List<Expense>> loadAll() async {
     List<Expense> expenseList = [];
 
-    RequestController req =
-      RequestController(path: "/api/expenses.php");
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String result = prefs.getString('ipAddress') ?? "no value accepted";
+    ipAddress = "http://$result";
+    RequestController req = RequestController(
+        path: "/api/expenses.php",
+        server: ipAddress
+    );
+
     await req.get();
+    print("response : $req");
     if(req.status() == 200 && req.result() != null){
       for (var item in req.result()) {
         expenseList.add(Expense.fromJson(item));
@@ -69,7 +88,11 @@ class Expense {
     // Update local
     int re = await SQLiteDB().update(SQLiteTable, 'id', toJson());
 
-    RequestController req = RequestController(path: path);
+    _loadStoredIPAddress();
+    RequestController req = RequestController(
+      path: path,
+      server: ipAddress,
+    );
     req.setBody(toJson());
     await req.put();
     if(req.status() == 200){
@@ -89,7 +112,11 @@ class Expense {
   Future<bool> delete() async {
     await SQLiteDB().delete(SQLiteTable, 'id', id);
 
-    RequestController req = RequestController(path: path);
+    _loadStoredIPAddress();
+    RequestController req = RequestController(
+      path: path,
+      server: ipAddress,
+    );
     req.setBody(toJson());
     await req.delete();
     if(req.status() == 200){

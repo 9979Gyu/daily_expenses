@@ -44,25 +44,21 @@ class SQLiteDB{
       ];
 
   Future<int> insert(String tableName, Map<String, dynamic> row) async {
-    try{
-      Database db = await _instance.database;
-      return await db.insert(tableName, row);
-    }
-    catch(e){
-      print("Error inserting data: $e");
-      throw e;
-    }
+    Database db = await _instance.database;
+    print("this is the db: $db");
+    int result = await db.insert(tableName, row);
+    return result;
   }
 
   Future<List<Map<String, dynamic>>> queryAll(String tableName) async {
     Database db = await _instance.database;
-    return await db.query(tableName);
+    List<Map<String, dynamic>> result =  await db.query(tableName);
+    return result;
   }
 
   Future<int> update(String tableName, String idColumn,
       Map<String, dynamic> row) async {
     Database db = await _instance.database;
-    print("this is id : $row['id']");
     dynamic id = row[idColumn];
     int result = await db.update(
         tableName, row, where: '$idColumn = ?', whereArgs: [id]
@@ -73,7 +69,6 @@ class SQLiteDB{
   Future<int> delete(String tableName, String idColumn,
       dynamic idValue) async {
     Database db = await _instance.database;
-    print("this is id : $idValue");
     return await db.delete(
         tableName, where: '$idColumn = ?', whereArgs: [idValue]
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:transparent_image/transparent_image.dart';
 import 'dailyexpenses.dart';
 
 void main() {
@@ -36,6 +37,17 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: FadeInImage.memoryNetwork(
+                    placeholder: kTransparentImage,
+                    image: 'https://w7.pngwing.com/pngs/978/821/'
+                        'png-transparent-money-finance-wallet-payment-daily-'
+                        'expenses-saving-service-personal-finance.png'
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(

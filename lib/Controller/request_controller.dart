@@ -1,6 +1,5 @@
 import 'dart:convert'; //json encode/decode
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class RequestController{
   String path;
@@ -10,16 +9,8 @@ class RequestController{
   final Map<String, String> _headers = {};
   dynamic _resultData;
 
-  _loadStoredIPAddress() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String ipAddress = prefs.getString('ipAddress') ?? "no value accepted";
-    return "http://$ipAddress";
-  }
-
-  // 10.0.2.16 - vm
-  // 10.0.0.2 - vm devices
-  // 10.131.76.215 - utem
-  RequestController({required this.path, this.server = ""});
+  RequestController({required this.path,
+    this.server = "http://192.168.0.123"});
 
   setBody(Map<String, dynamic> data){
     _body.clear();
@@ -28,22 +19,15 @@ class RequestController{
   }
 
   Future<void> post() async {
-    server = await _loadStoredIPAddress();
-    print("This is $server");
     _res = await http.post(
       Uri.parse(server + path),
       headers: _headers,
       body: jsonEncode(_body),
     );
-    print("response : ${_res}");
     _parseResult();
   }
 
   Future<void> get() async{
-    if(server == ""){
-      server = await _loadStoredIPAddress();
-    }
-    print("This is $server");
     _res = await http.get(
       Uri.parse(server + path),
       headers: _headers,
@@ -52,7 +36,6 @@ class RequestController{
   }
 
   Future<void> put() async{
-    server = await _loadStoredIPAddress();
     print("This is $server");
     _res = await http.put(
       Uri.parse(server + path),
@@ -63,8 +46,6 @@ class RequestController{
   }
 
   Future<void> delete() async{
-    server = await _loadStoredIPAddress();
-    print("This is $server");
     _res = await http.delete(
       Uri.parse(server + path),
       headers: _headers,

@@ -41,8 +41,7 @@ class _ExpenseListState extends State<ExpenseList> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp)
-    async {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       _showMessage("Welcome ${widget.username}");
 
       RequestController req = RequestController(
