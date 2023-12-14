@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   String username = usernameController.text;
                   String password = passwordController.text;
 
-                  if(username == "1" && password == "1" ) {
+                  if(username == "yuqin" && password == "123" ) {
                     // call function to set data in shared pref
                     try {
                       await _saveValue();
@@ -100,21 +100,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   else{
                     //show error message or handle invalid login
                     showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Login Failed'),
-                          content: const Text('Invalid username or password.'),
-                          actions: [
-                            TextButton(
-                              onPressed: (){
-                                Navigator.pop(context);
-                              },
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        );
-                      }
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text('Login Failed'),
+                            content: const Text('Invalid username or password.'),
+                            actions: [
+                              TextButton(
+                                onPressed: (){
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          );
+                        }
                     );
                   }
                 },
@@ -126,4 +126,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

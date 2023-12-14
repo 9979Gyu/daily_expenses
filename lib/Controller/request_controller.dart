@@ -2,15 +2,14 @@ import 'dart:convert'; //json encode/decode
 import 'package:http/http.dart' as http;
 
 class RequestController{
-  String path;
-  String server;
+  final String path;
+  final String server;
   http.Response? _res;
   final Map<dynamic, dynamic> _body = {};
   final Map<String, String> _headers = {};
   dynamic _resultData;
 
-  RequestController({required this.path,
-    this.server = "http://192.168.0.123"});
+  RequestController({required this.path, required this.server});
 
   setBody(Map<String, dynamic> data){
     _body.clear();
@@ -24,19 +23,21 @@ class RequestController{
       headers: _headers,
       body: jsonEncode(_body),
     );
+    print("response : ${_res}");
     _parseResult();
   }
 
+  //
   Future<void> get() async{
     _res = await http.get(
       Uri.parse(server + path),
       headers: _headers,
     );
+    print("The server is $server && the path is $path");
     _parseResult();
   }
 
   Future<void> put() async{
-    print("This is $server");
     _res = await http.put(
       Uri.parse(server + path),
       headers: _headers,

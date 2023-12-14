@@ -9,7 +9,19 @@ class Expense {
   double amount;
   String dateTime;
   String path = "/api/expenses.php";
-  static String ipAddress = "http://192.168.124.174";
+  static String ipAddress= "";
+
+  Expense(this.id, this.amount, this.desc, this.dateTime);
+
+  Expense.fromJson(Map<String, dynamic> json)
+      : desc = json['desc'] as String,
+        amount = double.parse(json['amount'] as dynamic),
+        dateTime = json['dateTime'] as String,
+        id = json['id'] as int?;
+
+  // toJson will be automatically called by jsonEncode when necessary
+  Map<String, dynamic> toJson() =>
+      {'desc': desc, 'amount': amount, 'dateTime': dateTime, 'id': id};
 
   _loadStoredIPAddress() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -17,27 +29,15 @@ class Expense {
     ipAddress = "http://$result";
   }
 
-  Expense(this.id, this.amount, this.desc, this.dateTime);
-
-  Expense.fromJson(Map<String, dynamic> json)
-    : desc = json['desc'] as String,
-      amount = double.parse(json['amount'] as dynamic),
-      dateTime = json['dateTime'] as String,
-      id = json['id'] as int?;
-
-  // toJson will be automatically called by jsonEncode when necessary
-  Map<String, dynamic> toJson() =>
-    {'desc': desc, 'amount': amount, 'dateTime': dateTime, 'id': id};
-
   Future<bool> save() async {
     // Save to local SQLite
-    await SQLiteDB().insert(SQLiteTable, toJson());
+    int result = await SQLiteDB().insert(SQLiteTable, toJson());
 
     // API operation
-    _loadStoredIPAddress();
+    await _loadStoredIPAddress();
     RequestController req = RequestController(
         path: path,
-        server: ipAddress,
+        server: ipAddress
     );
     req.setBody(toJson());
     await req.post();
@@ -46,10 +46,10 @@ class Expense {
       return true;
     }
     else{
-      if(await SQLiteDB().insert(SQLiteTable, toJson()) != 0) {
+      if(result != 0) {
         return true;
       }
-      else{
+      else {
         return false;
       }
     }
@@ -61,71 +61,71 @@ class Expense {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String result = prefs.getString('ipAddress') ?? "no value accepted";
     ipAddress = "http://$result";
+
     RequestController req = RequestController(
         path: "/api/expenses.php",
-        server: ipAddress
+        server: ipAddress,
     );
 
     await req.get();
-    print("response : $req");
     if(req.status() == 200 && req.result() != null){
       for (var item in req.result()) {
         expenseList.add(Expense.fromJson(item));
       }
     }
-    else {
+    else{
       List<Map<String, dynamic>> rawResult =
-        await SQLiteDB().queryAll(SQLiteTable);
+      await SQLiteDB().queryAll(SQLiteTable);
 
       for (var item in rawResult) {
         expenseList.add(Expense.fromJson(item));
       }
     }
+
     return expenseList;
   }
 
   Future<bool> edit() async {
     // Update local
-    int re = await SQLiteDB().update(SQLiteTable, 'id', toJson());
+    int result = await SQLiteDB().update(SQLiteTable, 'id', toJson());
 
-    _loadStoredIPAddress();
+    await _loadStoredIPAddress();
     RequestController req = RequestController(
-      path: path,
-      server: ipAddress,
+        path: path,
+        server: ipAddress
     );
     req.setBody(toJson());
     await req.put();
-    if(req.status() == 200){
+    if (req.status() == 200) {
       return true;
     }
-    else{
-      if(re != 0) {
+    else {
+      if (result != 0) {
         return true;
       }
-      else{
+      else {
         return false;
       }
     }
-    // return false;
   }
 
   Future<bool> delete() async {
-    await SQLiteDB().delete(SQLiteTable, 'id', id);
+    int result = await SQLiteDB().delete(SQLiteTable, 'id', id);
 
-    _loadStoredIPAddress();
+    // API operation
+    await _loadStoredIPAddress();
     RequestController req = RequestController(
-      path: path,
-      server: ipAddress,
+        path: path,
+        server: ipAddress
     );
+
     req.setBody(toJson());
     await req.delete();
     if(req.status() == 200){
       return true;
     }
     else{
-      print("HTTP return: ${req.status()}");
-      print("HTTP return: ${req.result()}");
-      if(await SQLiteDB().delete(SQLiteTable, 'id', id) != 0) {
+      if(result != 0) {
         return true;
       }
       else{

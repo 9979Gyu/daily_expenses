@@ -21,44 +21,49 @@ class SQLiteDB{
     }
     String path = join(await getDatabasesPath(), _dbName,);
     _db = await openDatabase(
-      path,
-      version: 1,
-      onCreate: (createdDb, version) async {
-        for(String tableSql in SQLiteDB.tableSQLStrings){
-          await createdDb.execute(tableSql);
+        path,
+        version: 1,
+        onCreate: (createdDb, version) async {
+          for(String tableSql in SQLiteDB.tableSQLStrings){
+            await createdDb.execute(tableSql);
+          }
         }
-      }
     );
     return _db!;
   }
 
   static List<String> tableSQLStrings =
-      [
-        '''
+  [
+    '''
           CREATE TABLE IF NOT EXISTS expense (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             amount VARCHAR(65),
             desc TEXT,
             dateTime DATETIME)
             ''',
-      ];
+  ];
 
   Future<int> insert(String tableName, Map<String, dynamic> row) async {
-    Database db = await _instance.database;
-    print("this is the db: $db");
-    int result = await db.insert(tableName, row);
-    return result;
+    try{
+      Database db = await _instance.database;
+      int result = await db.insert(tableName, row);
+      return result;
+    }
+    catch(e){
+      print("Error inserting data: $e");
+      throw e;
+    }
   }
 
   Future<List<Map<String, dynamic>>> queryAll(String tableName) async {
     Database db = await _instance.database;
-    List<Map<String, dynamic>> result =  await db.query(tableName);
-    return result;
+    return await db.query(tableName);
   }
 
   Future<int> update(String tableName, String idColumn,
       Map<String, dynamic> row) async {
     Database db = await _instance.database;
+    print("this is id : $row['id']");
     dynamic id = row[idColumn];
     int result = await db.update(
         tableName, row, where: '$idColumn = ?', whereArgs: [id]
@@ -69,6 +74,7 @@ class SQLiteDB{
   Future<int> delete(String tableName, String idColumn,
       dynamic idValue) async {
     Database db = await _instance.database;
+    print("this is id : $idValue");
     return await db.delete(
         tableName, where: '$idColumn = ?', whereArgs: [idValue]
     );

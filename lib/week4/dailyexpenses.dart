@@ -44,12 +44,13 @@ class _ExpenseListState extends State<ExpenseList> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       _showMessage("Welcome ${widget.username}");
 
-      RequestController req = RequestController(
-          path: "/api/timezone/Asia/Kuala_Lumpur",
-          server: "http://worldtimeapi.org"
+      RequestController reqTime = RequestController(
+        path: "/api/timezone/Asia/Kuala_Lumpur",
+        server: "http://worldtimeapi.org",
       );
-      req.get().then((value) {
-        dynamic res = req.result();
+
+      reqTime.get().then((value) {
+        dynamic res = reqTime.result();
         txtDateController.text =
             res["datetime"].toString().
             substring(0,19).replaceAll('T', ' ');
@@ -254,12 +255,11 @@ class _ExpenseListState extends State<ExpenseList> {
             margin: const EdgeInsets.all(8.0),
             child: ListTile(
               title: Text("${expenses[index].desc}"),
-              subtitle: Column(
+              subtitle: Row(
                 children: [
                   // edited
-                  Text('Amount: ${expenses[index].amount}'),
-                  // const Spacer(),
-                  Text('Date: ${expenses[index].dateTime}')
+                  Expanded(child: Text('Amount: ${expenses[index].amount}')),
+                  Expanded(child: Text('Date: ${expenses[index].dateTime}')),
                 ],
               ),
               trailing: IconButton(
